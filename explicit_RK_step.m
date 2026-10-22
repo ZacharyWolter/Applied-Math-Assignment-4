@@ -19,13 +19,13 @@ function [XB, num_evals] = explicit_RK_step(rate_func_in,t,XA,h,BT_struct)
     a_vals = BT_struct.A;
     b_vals = BT_struct.B;
     c_vals = BT_struct.C;
-    k_vals = [];
-    num_evals = 1;
+    k_vals = zeros(numel(XA), length(c_vals));
+    num_evals = 0;
 
-    for i = 1:length(b_vals)
-        k_vals(i) = rate_fun_in(t + c_vals(i)*h, XA + h * k*(a_vals(i, :)'));
+    for i = 1:length(c_vals)
+        k_vals(:, i) = rate_func_in((t + c_vals(i)*h), (XA + h * k_vals*(a_vals(i, :)')));
         num_evals = num_evals + 1;
     end
 
-    XB = XA + h * k_vals*b_vals;
+    XB = XA + h * k_vals*b_vals(:);
 end
