@@ -53,7 +53,14 @@ loglog(h_vals, errors1, 'ro-',displayname='XB1', MarkerSize=3, MarkerFaceColor='
 errors2 = abs(e_list2);
 loglog(h_vals, errors2, 'ko-', displayname='XB2', MarkerSize=2, MarkerFaceColor='k')
 
-% RK_step_embedded(anon_rate,t,XA,h,BT_struct)
+XB1 = [];
+XB2 = [];
+XA = solution01(t_ref);
+for i = 1:numel(h_vals)
+    [XB1(i), XB2(i), ~] = RK_step_embedded(anon_rate,t_ref,XA,h_vals(i),BT_struct);
+end
+
+errors3 = abs(XB1 - XB2);
 loglog(h_vals, errors3, 'bo-', displayname='XB1 - XB2', MarkerSize=2, MarkerFaceColor='k')
 
 
