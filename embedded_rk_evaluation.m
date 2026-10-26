@@ -68,3 +68,30 @@ legend('location', 'best')
 xlabel('Step Size (-)')
 ylabel('Measured Local Truncation Error $\epsilon$ (-)')
 title('Local Truncation Error Fit for Embedded Heun Euler')
+
+
+
+%fit lines
+valid = (errors1 > 0) & isfinite(errors1);
+p1 = polyfit(log10(h_vals(valid)), log10(errors1(valid)), 1);
+p1(1)
+fit_errors = 10.^polyval(p1, log10(h_vals));
+
+% figure;
+% loglog(h_vals, fit_errors, 'b', displayname=sprintf('Forward Euler Fit, p = %.2f', p1(1)), linewidth = 3); hold on
+% loglog(h_vals, errors1, 'ro',displayname='Forward Euler', MarkerSize=3, MarkerFaceColor='r'); 
+
+
+valid = (errors2 > 0) & isfinite(errors2);
+p2 = polyfit(log10(h_vals(valid)), log10(errors2(valid)), 1);
+p2(1)
+fit_errors = 10.^polyval(p2, log10(h_vals));
+
+% loglog(h_vals, fit_errors, 'k', displayname = sprintf('Explicit Midpoint Fit, p = %.2f', p2(1)), linewidth=3);
+% loglog(h_vals, errors2, 'go', displayname='Explicit Midpoint', MarkerSize=3, MarkerFaceColor='g');
+
+valid = (errors3 > 0) & isfinite(errors3);
+p3 = polyfit(log10(h_vals(valid)), log10(errors3(valid)), 1);
+p3(1)
+fit_errors = 10.^polyval(p3, log10(h_vals));
+
