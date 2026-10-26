@@ -18,12 +18,13 @@ function embedded_rk_evaluation
     t_ref  = 0;
     e_list1 = zeros(size(h_vals));
     e_list2 = zeros(size(h_vals));
+    f_diff  = zeros(size(h_vals));
     for i = 1:numel(h_vals)
-        [e_list1(i), e_list2(i)] = embedded_local_truncation_error( ...
-            G_func, anon_sol, t_ref, h_vals(i));
+        [e_list1(i), e_list2(i)] = embedded_local_truncation_error(G_func, anon_sol, t_ref, h_vals(i));
+        f_diff(i) = abs(anon_sol(t_ref + h_vals(i)) - anon_sol(t_ref));
     end
 
-    plot_embedded_error(h_vals, e_list1, e_list2);
+    plot_embedded_error(h_vals, e_list1, e_list2, f_diff);
 end
 
 function dXdt = rate_func01(t,X)
@@ -34,10 +35,11 @@ function X = solution01(t)
     X = cos(t);
 end
 
-function plot_embedded_error(h_vals, e_list1, e_list2)
+function plot_embedded_error(h_vals, e_list1, e_list2, f_diff)
     errors1 = abs(e_list1);
     errors2 = abs(e_list2);
     errors3 = abs(e_list1 - e_list2);
+    errors4 = f_diff(:)';
 
     colors = {[0 0.447 0.741], [0.85 0.325 0.098], [0.466 0.674 0.188]};
 
@@ -47,7 +49,7 @@ function plot_embedded_error(h_vals, e_list1, e_list2)
     plot(h_vals, errors1, 'o-', 'Color', colors{1}, 'MarkerFaceColor', colors{1}, 'MarkerSize',8, 'LineWidth',2, 'DisplayName', '$X_{B1}$ (Heun, 2nd order) $\quad$');
     plot(h_vals, errors2, 'o-', 'Color', colors{2}, 'MarkerFaceColor', colors{2}, 'MarkerSize',6, 'LineWidth',2, 'DisplayName', '$X_{B2}$ (Euler, 1st order) $\quad$');
     plot(h_vals, errors3, 'o-', 'Color', colors{3}, 'MarkerFaceColor', colors{3}, 'MarkerSize',3, 'LineWidth',2, 'DisplayName', '$|X_{B1} - X_{B2}|$ (error est.) $\quad$');
-
+    plot(h_vals, errors4, 'k--', 'LineWidth', 3, 'DisplayName', '$|f(t_{\mathrm{refm}}+h) - f(t_{\mathrm{ref}})|$ $\quad$');
 
     ax = gca;
     set(ax,'XScale','log','YScale','log', 'FontSize',16, 'TickLabelInterpreter','latex', 'LineWidth',1);
