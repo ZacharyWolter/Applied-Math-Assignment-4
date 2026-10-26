@@ -1,6 +1,31 @@
-% Embedded RK Method Evaluation
+function embedded_rk_evaluation
+    close all;
+    % Embedded RK method evaluation (Heun-Euler)
 
-% Test function
+    % Embedded Heun-Euler tableau
+    BT_struct = struct();
+    BT_struct.C = [0, 1];
+    BT_struct.B = [1/2, 1/2; 1, 0];
+    BT_struct.A = [0, 0; 1, 0];
+
+    % Function handles (BT_struct is defined above, so it is captured correctly)
+    anon_rate = @(t,X) rate_func01(t,X);
+    anon_sol  = @(t) solution01(t);
+    G_func    = @(t,XA,h) RK_step_embedded(anon_rate,t,XA,h,BT_struct);
+
+    % Local truncation error sweep
+    h_vals = logspace(-5, 1, 100);
+    t_ref  = 0;
+    e_list1 = zeros(size(h_vals));
+    e_list2 = zeros(size(h_vals));
+    for i = 1:numel(h_vals)
+        [e_list1(i), e_list2(i)] = embedded_local_truncation_error( ...
+            G_func, anon_sol, t_ref, h_vals(i));
+    end
+
+    plot_embedded_error(h_vals, e_list1, e_list2);
+end
+
 function dXdt = rate_func01(t,X)
     dXdt = -5*X + 5*cos(t) - sin(t);
 end
@@ -9,89 +34,32 @@ function X = solution01(t)
     X = cos(t);
 end
 
+function plot_embedded_error(h_vals, e_list1, e_list2)
+    errors1 = abs(e_list1);
+    errors2 = abs(e_list2);
+    errors3 = abs(e_list1 - e_list2);
 
-anon_rate  = @(t, X) rate_func01(t, X);
-anon_sol   = @(t) solution01(t);
+    colors = {[0 0.447 0.741], [0.85 0.325 0.098], [0.466 0.674 0.188]};
 
-G_func = @ (t,XA,h) RK_step_embedded(anon_rate,t,XA,h,BT_struct);
+    figure;
+    hold on;
+        
+    plot(h_vals, errors1, 'o-', 'Color', colors{1}, 'MarkerFaceColor', colors{1}, 'MarkerSize',8, 'LineWidth',2, 'DisplayName', '$X_{B1}$ (Heun, 2nd order) $\quad$');
+    plot(h_vals, errors2, 'o-', 'Color', colors{2}, 'MarkerFaceColor', colors{2}, 'MarkerSize',6, 'LineWidth',2, 'DisplayName', '$X_{B2}$ (Euler, 1st order) $\quad$');
+    plot(h_vals, errors3, 'o-', 'Color', colors{3}, 'MarkerFaceColor', colors{3}, 'MarkerSize',3, 'LineWidth',2, 'DisplayName', '$|X_{B1} - X_{B2}|$ (error est.) $\quad$');
 
 
-% Heun Euler
-HeunEuler = struct();
-HeunEuler.C = [0,1];
-HeunEuler.B = [1/2,1/2;1,0];
-HeunEuler.A = [0,0;1,0];
+    ax = gca;
+    set(ax,'XScale','log','YScale','log', 'FontSize',16, 'TickLabelInterpreter','latex', 'LineWidth',1);
+    xlim([(1e-5)/2 (1e2)/2])
+    ylim([1e-11 1e3])
+    grid on;
+    box on;
 
-BT_struct = HeunEuler;
+    title('Local Truncation Error vs. Step Size for Embedded Heun--Euler', 'Interpreter','latex','FontSize',13);
+    xlabel('Step Size (-)','Interpreter','latex','FontSize',18);
+    ylabel('$\epsilon_{\mathrm{local}}$ (-)', 'Interpreter','latex','FontSize',20);
+    legend('Location','southeast', 'Interpreter','latex','FontSize',10);
 
-h_vals = logspace(-5, 1, 100);
-t_ref  = 0;
-
-e_list1 = zeros(size(h_vals));
-e_list2 = zeros(size(h_vals));
-e_list3 = zeros(size(h_vals));
-
-for i = 1:numel(h_vals)
-    [e_list1(i), e_list2(i)] = embedded_local_truncation_error(G_func, anon_sol, t_ref, h_vals(i));
+    exportgraphics(gcf, 'Local Error - embedded Heun Euler vs h.png', 'Resolution',600);
 end
-
-
-
-%% 
-% Plotting
-set(groot, 'DefaultTextInterpreter', 'latex');
-set(groot, 'DefaultAxesTickLabelInterpreter', 'latex');
-set(groot, 'DefaultLegendInterpreter', 'latex');
-close all
-figure; 
-
-
-
-errors1 = abs(e_list1);
-loglog(h_vals, errors1, 'ro-',displayname='XB1', MarkerSize=3, MarkerFaceColor='r'); hold on
-
-errors2 = abs(e_list2);
-loglog(h_vals, errors2, 'ko-', displayname='XB2', MarkerSize=2, MarkerFaceColor='k')
-
-XB1 = [];
-XB2 = [];
-XA = solution01(t_ref);
-for i = 1:numel(h_vals)
-    [XB1(i), XB2(i), ~] = RK_step_embedded(anon_rate,t_ref,XA,h_vals(i),BT_struct);
-end
-
-errors3 = abs(XB1 - XB2);
-loglog(h_vals, errors3, 'bo-', displayname='XB1 - XB2', MarkerSize=2, MarkerFaceColor='k')
-
-
-legend('location', 'best')
-xlabel('Step Size (-)')
-ylabel('Measured Local Truncation Error $\epsilon$ (-)')
-title('Local Truncation Error Fit for Embedded Heun Euler')
-
-
-
-%fit lines
-valid = (errors1 > 0) & isfinite(errors1);
-p1 = polyfit(log10(h_vals(valid)), log10(errors1(valid)), 1);
-p1(1)
-fit_errors = 10.^polyval(p1, log10(h_vals));
-
-% figure;
-% loglog(h_vals, fit_errors, 'b', displayname=sprintf('Forward Euler Fit, p = %.2f', p1(1)), linewidth = 3); hold on
-% loglog(h_vals, errors1, 'ro',displayname='Forward Euler', MarkerSize=3, MarkerFaceColor='r'); 
-
-
-valid = (errors2 > 0) & isfinite(errors2);
-p2 = polyfit(log10(h_vals(valid)), log10(errors2(valid)), 1);
-p2(1)
-fit_errors = 10.^polyval(p2, log10(h_vals));
-
-% loglog(h_vals, fit_errors, 'k', displayname = sprintf('Explicit Midpoint Fit, p = %.2f', p2(1)), linewidth=3);
-% loglog(h_vals, errors2, 'go', displayname='Explicit Midpoint', MarkerSize=3, MarkerFaceColor='g');
-
-valid = (errors3 > 0) & isfinite(errors3);
-p3 = polyfit(log10(h_vals(valid)), log10(errors3(valid)), 1);
-p3(1)
-fit_errors = 10.^polyval(p3, log10(h_vals));
-
