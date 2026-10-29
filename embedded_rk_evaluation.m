@@ -19,9 +19,10 @@ function embedded_rk_evaluation
     e_list1 = zeros(size(h_vals));
     e_list2 = zeros(size(h_vals));
     f_diff  = zeros(size(h_vals));
+    X = solution01(t_ref);
     for i = 1:numel(h_vals)
         [e_list1(i), e_list2(i)] = embedded_local_truncation_error(G_func, anon_sol, t_ref, h_vals(i));
-        f_diff(i) = abs(anon_sol(t_ref + h_vals(i)) - anon_sol(t_ref));
+        f_diff(i) = abs(anon_rate(t_ref + h_vals(i), X) - anon_rate(t_ref, X));
     end
 
     plot_embedded_error(h_vals, e_list1, e_list2, f_diff);

@@ -78,3 +78,20 @@ BT_struct.C = [0 ; 0.5; 1];
 (anon_grav_rate_func,tspan,V0,h_ref,BT_struct);
 
 plot(X_list(:, 1), X_list(:, 2));
+
+
+
+%%
+% Embedded Heun-Euler tableau
+BT_struct = struct();
+BT_struct.C = [0, 1];
+BT_struct.B = [1/2, 1/2; 1, 0];
+BT_struct.A = [0, 0; 1, 0];
+
+error_desired = 0.05;
+
+
+[t_list,X_list,h_avg, num_evals] = explicit_RK_variable_step_integration ...
+(anon_grav_rate_func,tspan,V0,h_ref,BT_struct,p,error_desired);
+
+plot(X_list(:, 1), X_list(:, 2), 'r--');
