@@ -16,27 +16,40 @@
 %X_list: the vector of X, [X0';X1';X2';...;(X_end)'] at each time step
 %h_avg: the average step size
 %num_evals: total number of calls made to rate_func_in during the integration
-function [t_list,X_list,h_avg, num_evals] = explicit_RK_variable_step_integration ...
-(rate_func_in,tspan,X0,h_ref,BT_struct,p,error_desired)
+function [t_list,X_list,h_avg,num_evals] = explicit_RK_variable_step_integration ...
+    (rate_func_in,tspan,X0,h_ref,BT_struct,p,error_desired)
 
     num_evals = 0;
-    
-    N = ceil((tspan(2)-tspan(1))/h_ref);
-    h_avg = (tspan(2)-tspan(1))/N;
-    t_list = linspace(tspan(1),tspan(2),N+1)';
-    X_list = zeros(N+1,numel(X0));
-    X_list(1,:) = X0(:)';
 
-    XA = X0;
-    for n = 1:N
-        redo = true;
-        while redo == true
-            [XB, num_evals, h_next, redo] = explicit_RK_variable_step(rate_func_in,t,XA,h,BT_struct,p,error_desired);
-            X_list(n+1,:) = XB(:)';
+    t = tspan(1);
+    t_end = tspan(2);
+    XA = X0(:);
+
+    t_list = t;
+    X_list = XA';
+
+    h = h_ref;
+
+    while t < t_end
+
+        h = min(h, t_end - t);
+
+        [XB,num,h_next,redo] = explicit_RK_variable_step ...
+            (rate_func_in,t,XA,h,BT_struct,p,error_desired);
+
+        num_evals = num_evals + num;
+
+        if ~redo
+            t = t + h;
             XA = XB;
-            num_evals = num_evals + num;
-            h = h_next;
+
+            t_list(end+1,1) = t;
+            X_list(end+1,:) = XA';
         end
+        h = h_next;
+
     end
+
+    h_avg = (t_list(end) - t_list(1)) / (length(t_list) - 1);
 
 end

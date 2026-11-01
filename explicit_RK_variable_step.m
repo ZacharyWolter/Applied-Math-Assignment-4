@@ -36,11 +36,11 @@ function [XB, num_evals, h_next, redo] = explicit_RK_variable_step...
         num_evals = num_evals + 1;
     end
 
-    XB1 = XA + h * k_vals*b_vals(:, 1);
-    XB2 = XA + h * k_vals*b_vals(:, 2);
+    XB1 = XA + h * k_vals * b_vals(1,:)';
+    XB2 = XA + h * k_vals * b_vals(2,:)';
     XB = XB1;
 
-    est_error = abs(XB1-XB2);
+    est_error = norm(XB1-XB2);
 
     alpha = 2;
     h_next = min(0.9*(error_desired/est_error)^(1/p), alpha) * h;
