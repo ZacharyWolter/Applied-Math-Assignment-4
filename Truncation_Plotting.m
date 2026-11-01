@@ -1,5 +1,5 @@
 function Truncation_Plotting
-
+ 
     % Orbit setup
     orbit_params = struct();
     orbit_params.m_sun = 1;
