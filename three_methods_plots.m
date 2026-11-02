@@ -86,3 +86,53 @@ lgd = legend(axs(1), 'Orientation', 'horizontal', 'NumColumns', 2, 'Interpreter'
 lgd.Layout.Tile = 'north';
 
 exportgraphics(fig, 'Runga-Kutta Compariso.png', 'Resolution', 600);
+
+%%
+% Embedded testing
+figure;
+% Analytical
+
+V_list = compute_planetary_motion(t_range,V0,orbit_params);
+
+% axis equal; axis square;
+% axis([-20,20,-20,20])
+
+subplot(2, 1, 1)
+plot(0,0,'ro','markerfacecolor','r','markersize', 9, 'DisplayName', 'Sun'); hold on
+plot(t_range, V_list(:,1),'k', 'LineWidth', 4, 'DisplayName', 'Analytical Solution');
+
+subplot(2, 1, 2)
+plot(0,0,'ro','markerfacecolor','r','markersize', 9, 'DisplayName', 'Sun'); hold on
+plot(t_range, V_list(:,2),'k', 'LineWidth', 4, 'DisplayName', 'Analytical Solution');
+
+% Embedded Heun-Euler tableau
+BT_struct = struct();
+BT_struct.C = [0, 1];
+BT_struct.B = [1/2, 1/2; 1, 0];
+BT_struct.A = [0, 0; 1, 0];
+
+error_desired = 0.05;
+
+
+p = 2;
+[t_list,X_list,h_avg, num_evals] = explicit_RK_variable_step_integration ...
+(anon_grav_rate_func,tspan,V0,h_ref,BT_struct,p,error_desired);
+
+subplot(2, 1, 1)
+plot(t_list, X_list(:, 1), 'LineStyle', ':', 'LineWidth', 5.5, 'DisplayName', 'Heun');
+
+subplot(2, 1, 2)
+plot(t_list, X_list(:, 2), 'LineStyle', ':', 'LineWidth', 5.5, 'DisplayName', 'Heun');
+
+
+subplot(2, 1, 1)
+xlabel('$time\ (-)$', 'Interpreter', 'latex', 'FontSize', 16)
+ylabel('$x\ (-)$', 'Interpreter', 'latex', 'FontSize', 17);
+title({'Embedded Test'}, 'Interpreter', 'latex', 'FontSize', 13)
+legend('Location', 'best', 'Interpreter', 'latex', 'FontSize', 10.5);
+
+
+subplot(2, 1, 2)
+xlabel('$time\ (-)$', 'Interpreter', 'latex', 'FontSize', 16)
+ylabel('$y\ (-)$', 'Interpreter', 'latex', 'FontSize', 17);
+grid on;
