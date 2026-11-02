@@ -1,0 +1,110 @@
+%% Initialize
+close all 
+orbit_params = struct();
+orbit_params.m_sun = 1;
+orbit_params.m_planet = 1;
+orbit_params.G = 40;
+x0 = 8;
+y0 = 8;
+dxdt0 = 0;
+dydt0 = 1;
+V0 = [x0; y0; dxdt0; dydt0];
+
+t_end = 100;
+tspan = [0, t_end];
+t_range = linspace(0, t_end, 1000);
+h_ref = 0.1;
+
+anon_grav_rate_func = @(t, V) gravity_rate_func(t, V, orbit_params);
+ 
+V_list = compute_planetary_motion(t_range, V0, orbit_params);
+x_analytical = V_list(:, 1);
+y_analytical = V_list(:, 2);
+
+ % axis equal; axis square;
+ %    axis([-20,20,-20,20])
+ %    hold on
+ %    plot(0,0,'ro','markerfacecolor','r','markersize',5);
+ %    plot(V_list(:,1),V_list(:,2),'k');
+
+%% Time step clustering
+
+fig = figure;
+fig.Position = [100, 100, 800, 600];
+
+V_list = compute_planetary_motion(t_range,V0,orbit_params);
+
+subplot(2, 1, 1)
+plot(t_range, V_list(:,1),'k', 'LineWidth', 4, 'DisplayName', 'Analytical Solution'); hold on
+
+subplot(2, 1, 2)
+plot(t_range, V_list(:,2),'k', 'LineWidth', 4, 'DisplayName', 'Analytical Solution'); hold on
+
+BT_struct = struct();
+BT_struct.C = [0, 1];
+BT_struct.B = [1/2, 1/2; 1, 0];
+BT_struct.A = [0, 0; 1, 0];
+
+error_desired = 0.01;
+
+p = 2;
+[t_list,X_list,h_avg, num_evals] = explicit_RK_variable_step_integration ...
+(anon_grav_rate_func,tspan,V0,h_ref,BT_struct,p,error_desired);
+
+subplot(2,1,1)
+plot(t_list, X_list(:,1), 'go', ...
+    'MarkerSize', 3, 'DisplayName', 'Embedded Heun-Euler', MarkerFaceColor='g');
+
+subplot(2,1,2)
+plot(t_list, X_list(:,2), 'go', ...
+    'MarkerSize', 4, 'DisplayName', 'Embedded Heun-Euler', MarkerFaceColor='g');
+
+sgtitle('Adaptive Heun: Time-Step Clustering', ...
+    'Interpreter','latex','FontSize',20);
+
+subplot(2, 1, 1)
+xlabel('$t\ (-)$', 'Interpreter', 'latex', 'FontSize', 16)
+ylabel('$x(t)\ (-)$', 'Interpreter', 'latex', 'FontSize', 17);
+title('$x$-Component of Planetary Motion', ...
+    'Interpreter','latex','FontSize',16);
+legend('Location','northoutside','Orientation','horizontal', ...
+    'Interpreter','latex','FontSize',12);
+grid on;
+
+subplot(2, 1, 2)
+xlabel('$t\ (-)$', 'Interpreter', 'latex', 'FontSize', 16)
+ylabel('$y(t)\ (-)$', 'Interpreter', 'latex', 'FontSize', 17);
+title('$y$-Component of Planetary Motion', ...
+    'Interpreter','latex','FontSize',16);
+grid on;
+
+exportgraphics(fig, 'Time step clustering.png', 'Resolution', 600);
+
+%% Step size vs. orbit distance
+fig = figure;
+
+x = X_list(:,1);
+y = X_list(:,2);
+
+r = sqrt(x.^2 + y.^2);
+h_list = diff(t_list);
+
+r_start = r(1:end-1);
+
+semilogy(r_start, h_list, 'o', ...
+    'MarkerSize', 6, 'LineStyle', 'none', displayname='Embedded Heun-Euler');
+
+xlim([0 ])
+xlabel('Distance from Sun)', ...
+    'Interpreter', 'latex', 'FontSize', 18);
+ylabel('$h$ (step size)', ...
+    'Interpreter', 'latex', 'FontSize', 18);
+title(sprintf('Step Size vs Distance of Heun: $\\varepsilon_{\\mathrm{desired}} = %g$', ...
+    error_desired), 'Interpreter', 'latex', 'FontSize', 18);
+legend('location', 'best')
+
+set(gca, 'TickLabelInterpreter', 'latex', 'FontSize', 16);
+grid on;
+
+
+exportgraphics(fig, 'Step size vs. orbit distance.png', 'Resolution', 600);
